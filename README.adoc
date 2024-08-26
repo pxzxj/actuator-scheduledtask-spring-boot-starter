@@ -1,0 +1,20 @@
+= actuator-schedule-spring-boot-starter
+
+
+== TaskDefinition
+
+ID、方法、状态(调度中、已取消)、cron、fixedDelay、fixedRate
+
+== TaskExecution
+
+ID、方法、执行开始时间、执行结束时间、状态(执行中、已结束)、日志信息、是否存在异常、异常信息
+
+== todo
+
+* 立即执行任务
+* 取消任务
+
+== 配置属性
+
+* 内存大小限制
+* 表名称
