@@ -2,11 +2,11 @@ package io.github.pxzxj;
 
 import java.time.LocalDateTime;
 
-public class TaskExecution {
+public class ScheduledTaskExecution {
 
     private Long id;
 
-    private String method;
+    private String methodName;
 
     private LocalDateTime startTime;
 
@@ -26,12 +26,12 @@ public class TaskExecution {
         this.id = id;
     }
 
-    public String getMethod() {
-        return method;
+    public String getMethodName() {
+        return methodName;
     }
 
-    public void setMethod(String method) {
-        this.method = method;
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
     }
 
     public LocalDateTime getStartTime() {
@@ -72,5 +72,11 @@ public class TaskExecution {
 
     public void setException(String exception) {
         this.exception = exception;
+    }
+
+    enum State {
+
+        EXECUTING, FINISHED;
+
     }
 }

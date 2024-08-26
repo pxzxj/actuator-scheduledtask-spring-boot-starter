@@ -14,10 +14,10 @@ import java.time.LocalDateTime;
 @Aspect
 public class ScheduledAspect {
 
-    private final TaskExecutionRepository taskExecutionRepository;
+    private final ScheduledTaskExecutionRepository scheduledTaskExecutionRepository;
 
-    public ScheduledAspect(TaskExecutionRepository taskExecutionRepository) {
-        this.taskExecutionRepository = taskExecutionRepository;
+    public ScheduledAspect(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
+        this.scheduledTaskExecutionRepository = scheduledTaskExecutionRepository;
     }
 
     @Around("@annotation(org.springframework.scheduling.annotation.Scheduled) || @annotation(org.springframework.scheduling.annotation.Schedules)")
@@ -27,7 +27,7 @@ public class ScheduledAspect {
         ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(declaringType);
         LoggerContext loggerContext = logger.getLoggerContext();
         ByteArrayOutputStreamAppender byteArrayOutputStreamAppender = new ByteArrayOutputStreamAppender();
-        byteArrayOutputStreamAppender.setName(methodName + "-byteArray");
+        byteArrayOutputStreamAppender.setName(methodName + "-byteArray-" + LocalDateTime.now());
         byteArrayOutputStreamAppender.setContext(loggerContext);
         LayoutWrappingEncoder<ILoggingEvent> encoder = new LayoutWrappingEncoder<ILoggingEvent>();
         encoder.setContext(loggerContext);
@@ -38,21 +38,22 @@ public class ScheduledAspect {
         byteArrayOutputStreamAppender.setEncoder(encoder);
         byteArrayOutputStreamAppender.start();
         logger.addAppender(byteArrayOutputStreamAppender);
-        TaskExecution taskExecution = new TaskExecution();
-        taskExecution.setMethod(declaringType.getName() + "." + methodName);
-        taskExecution.setStartTime(LocalDateTime.now());
-        taskExecution.setState(State.EXECUTING);
-        taskExecutionRepository.start(taskExecution, byteArrayOutputStreamAppender);
+        //todo: 方法过滤
+        ScheduledTaskExecution scheduledTaskExecution = new ScheduledTaskExecution();
+        scheduledTaskExecution.setMethodName(declaringType.getName() + "." + methodName);
+        scheduledTaskExecution.setStartTime(LocalDateTime.now());
+        scheduledTaskExecution.setState(ScheduledTaskExecution.State.EXECUTING);
+        scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStreamAppender);
         try {
             return joinPoint.proceed();
         } catch (Exception ex) {
-            taskExecution.setException(ex.getMessage());
+            scheduledTaskExecution.setException(ex.getMessage());
             throw ex;
         } finally {
-            taskExecution.setState(State.FINISHED);
-            taskExecution.setLog(byteArrayOutputStreamAppender.getLoggingContent());
-            taskExecution.setEndTime(LocalDateTime.now());
-            taskExecutionRepository.finish(taskExecution);
+            scheduledTaskExecution.setState(ScheduledTaskExecution.State.FINISHED);
+            scheduledTaskExecution.setLog(byteArrayOutputStreamAppender.getLoggingContent());
+            scheduledTaskExecution.setEndTime(LocalDateTime.now());
+            scheduledTaskExecutionRepository.finish(scheduledTaskExecution);
             logger.detachAppender(byteArrayOutputStreamAppender);
             byteArrayOutputStreamAppender.stop();
             layout.stop();

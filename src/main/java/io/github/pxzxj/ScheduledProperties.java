@@ -2,8 +2,8 @@ package io.github.pxzxj;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("management.schedule")
-public class ScheduleProperties {
+@ConfigurationProperties("management.scheduledtask")
+public class ScheduledProperties {
 
     private RepositoryType repositoryType = RepositoryType.MEMORY;
 
