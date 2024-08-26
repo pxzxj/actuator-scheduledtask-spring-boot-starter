@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.pxzxj</groupId>
-    <artifactId>actuator-schedule-spring-boot-starter</artifactId>
+    <artifactId>actuator-scheduledtask-spring-boot-starter</artifactId>
     <version>1.0</version>
 
     <properties>
