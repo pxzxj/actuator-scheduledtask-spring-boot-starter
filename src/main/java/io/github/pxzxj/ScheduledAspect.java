@@ -23,10 +23,11 @@ public class ScheduledAspect {
     @Around("@annotation(org.springframework.scheduling.annotation.Scheduled) || @annotation(org.springframework.scheduling.annotation.Schedules)")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         Class<?> declaringType = joinPoint.getSignature().getDeclaringType();
+        String methodName = joinPoint.getSignature().getName();
         ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(declaringType);
         LoggerContext loggerContext = logger.getLoggerContext();
         ByteArrayOutputStreamAppender byteArrayOutputStreamAppender = new ByteArrayOutputStreamAppender();
-        byteArrayOutputStreamAppender.setName(joinPoint.getSignature().getName() + LocalDateTime.now());
+        byteArrayOutputStreamAppender.setName(methodName + "-byteArray");
         byteArrayOutputStreamAppender.setContext(loggerContext);
         LayoutWrappingEncoder<ILoggingEvent> encoder = new LayoutWrappingEncoder<ILoggingEvent>();
         encoder.setContext(loggerContext);
@@ -37,18 +38,25 @@ public class ScheduledAspect {
         byteArrayOutputStreamAppender.setEncoder(encoder);
         byteArrayOutputStreamAppender.start();
         logger.addAppender(byteArrayOutputStreamAppender);
+        TaskExecution taskExecution = new TaskExecution();
+        taskExecution.setMethod(declaringType.getName() + "." + methodName);
+        taskExecution.setStartTime(LocalDateTime.now());
+        taskExecution.setState(State.EXECUTING);
+        taskExecutionRepository.start(taskExecution, byteArrayOutputStreamAppender);
         try {
-
-            Object proceed = joinPoint.proceed();
-            logger.detachAppender(byteArrayOutputStreamAppender);
-            byteArrayOutputStreamAppender.stop();
-            return proceed;
+            return joinPoint.proceed();
         } catch (Exception ex) {
-
+            taskExecution.setException(ex.getMessage());
             throw ex;
         } finally {
+            taskExecution.setState(State.FINISHED);
+            taskExecution.setLog(byteArrayOutputStreamAppender.getLoggingContent());
+            taskExecution.setEndTime(LocalDateTime.now());
+            taskExecutionRepository.finish(taskExecution);
+            logger.detachAppender(byteArrayOutputStreamAppender);
             byteArrayOutputStreamAppender.stop();
             layout.stop();
         }
     }
+
 }

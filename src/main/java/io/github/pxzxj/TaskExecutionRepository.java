@@ -5,8 +5,10 @@ import java.util.List;
 
 public interface TaskExecutionRepository {
 
-    void save(TaskExecution taskExecution);
+    void start(TaskExecution taskExecution, ByteArrayOutputStreamAppender byteArrayOutputStreamAppender);
 
-    List<TaskExecution> page(String method, LocalDateTime startTime, LocalDateTime endTime, int page, int limit);
+    void finish(TaskExecution taskExecution);
+
+    List<TaskExecution> query(String method, LocalDateTime startTime, LocalDateTime endTime, int page, int limit);
 
 }
