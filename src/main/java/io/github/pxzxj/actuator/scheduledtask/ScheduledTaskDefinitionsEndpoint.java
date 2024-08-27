@@ -36,9 +36,9 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
     public Page<ScheduledTaskDefinition> page(@Nullable String methodName, int page, int size) {
         List<ScheduledTaskDefinition> list;
         if (StringUtils.hasText(methodName)) {
-            list = scheduledTaskDefinitions.stream().filter(def -> def.getMethodName().contains(methodName)).collect(Collectors.toList());
+            list = getScheduledTaskHolders().stream().filter(def -> def.getMethodName().contains(methodName)).collect(Collectors.toList());
         } else {
-            list = new ArrayList<>(scheduledTaskDefinitions);
+            list = new ArrayList<>(getScheduledTaskHolders());
         }
         return Page.of(list, page, size);
     }
@@ -63,7 +63,7 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
     }
 
     private void execute(Integer id) {
-        ScheduledTaskDefinition scheduledTaskDefinition = scheduledTaskDefinitions.stream()
+        ScheduledTaskDefinition scheduledTaskDefinition = getScheduledTaskHolders().stream()
                 .filter(def -> def.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("scheduledTaskDefinition not found for id " + id));

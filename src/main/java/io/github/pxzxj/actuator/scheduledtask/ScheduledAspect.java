@@ -9,6 +9,8 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 
 @Aspect
@@ -46,9 +48,9 @@ public class ScheduledAspect {
         scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStreamAppender);
         try {
             return joinPoint.proceed();
-        } catch (Throwable ex) {
-            scheduledTaskExecution.setException(ex.getMessage());
-            throw ex;
+        } catch (Throwable throwable) {
+            scheduledTaskExecution.setException(readStackTrace(throwable));
+            throw throwable;
         } finally {
             scheduledTaskExecution.setState(ScheduledTaskExecution.State.FINISHED);
             scheduledTaskExecution.setLog(byteArrayOutputStreamAppender.getLoggingContent());
@@ -58,6 +60,14 @@ public class ScheduledAspect {
             byteArrayOutputStreamAppender.stop();
             layout.stop();
         }
+    }
+
+    private String readStackTrace(Throwable throwable) {
+        StringWriter stringWriter = new StringWriter();
+        try (PrintWriter printWriter = new PrintWriter(stringWriter)) {
+            throwable.printStackTrace(printWriter);
+        }
+        return stringWriter.toString();
     }
 
 }

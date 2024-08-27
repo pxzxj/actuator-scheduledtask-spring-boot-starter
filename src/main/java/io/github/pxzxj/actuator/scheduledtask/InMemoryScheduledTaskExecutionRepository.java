@@ -24,11 +24,11 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
         int memorySizeLimit = actuatorScheduledProperties.getMemorySizeLimit();
         scheduledTaskExecutions = new LinkedList<ScheduledTaskExecution>() {
             @Override
-            public boolean add(ScheduledTaskExecution scheduledTaskExecution) {
+            public void addFirst(ScheduledTaskExecution scheduledTaskExecution) {
                 if(scheduledTaskExecutions.size() >= memorySizeLimit) {
-                    scheduledTaskExecutions.removeFirst();
+                    scheduledTaskExecutions.removeLast();
                 }
-                return super.add(scheduledTaskExecution);
+                super.addFirst(scheduledTaskExecution);
             }
         };
     }
@@ -38,7 +38,7 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
         scheduledTaskExecution.setId(index.incrementAndGet());
         executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStreamAppender);
         readWriteLock.writeLock().lock();
-        scheduledTaskExecutions.add(scheduledTaskExecution);
+        scheduledTaskExecutions.addFirst(scheduledTaskExecution);
         readWriteLock.writeLock().unlock();
     }
 
@@ -72,7 +72,6 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
                 iterator.remove();
             }
         }
-        Collections.reverse(list);
         return Page.of(list, page, size);
     }
 
