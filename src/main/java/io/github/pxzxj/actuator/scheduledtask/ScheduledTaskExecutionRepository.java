@@ -1,6 +1,4 @@
-package io.github.pxzxj;
-
-import java.util.List;
+package io.github.pxzxj.actuator.scheduledtask;
 
 public interface ScheduledTaskExecutionRepository {
 
@@ -8,6 +6,8 @@ public interface ScheduledTaskExecutionRepository {
 
     void finish(ScheduledTaskExecution scheduledTaskExecution);
 
-    List<ScheduledTaskExecution> query(String method, String startTime, String endTime, int page, int limit);
+    Page<ScheduledTaskExecution> page(String methodName, String startTimeStart, String startTimeEnd, String endTimeStart, String endTimeEnd, int page, int size);
+
+    String log(Long id);
 
 }

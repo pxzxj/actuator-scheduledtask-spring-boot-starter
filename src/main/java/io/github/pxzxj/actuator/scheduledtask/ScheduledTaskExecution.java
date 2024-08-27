@@ -1,4 +1,6 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +16,7 @@ public class ScheduledTaskExecution {
 
     private State state;
 
+    @JsonIgnore
     private String log;
 
     private String exception;

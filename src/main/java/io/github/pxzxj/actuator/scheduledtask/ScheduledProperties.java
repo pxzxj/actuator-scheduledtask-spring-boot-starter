@@ -1,4 +1,4 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -7,7 +7,7 @@ public class ScheduledProperties {
 
     private RepositoryType repositoryType = RepositoryType.MEMORY;
 
-    private int memorySizeLimit = 100000;
+    private int memorySizeLimit = 20000;
 
     private String jdbcTableName = "schedule_task_execution";
 

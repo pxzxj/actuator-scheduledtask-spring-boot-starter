@@ -1,12 +1,14 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
 
 import ch.qos.logback.classic.Logger;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
 
@@ -33,15 +35,22 @@ public class ScheduledAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "management.schedule", name = "repository-type", havingValue = "memory", matchIfMissing = true)
-    public InMemoryScheduledTaskExecutionRepository inMemoryScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties) {
+    public ScheduledTaskExecutionRepository inMemoryScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties) {
         return new InMemoryScheduledTaskExecutionRepository(scheduledProperties);
     }
 
-    @Bean
-    @ConditionalOnProperty(prefix = "management.schedule", name = "repository-type", havingValue = "jdbc")
-    public JdbcScheduledTaskExecutionRepository jdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate) {
-        return new JdbcScheduledTaskExecutionRepository(scheduledProperties, jdbcTemplate);
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(JdbcTemplate.class)
+    static class JdbcConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean
+        @ConditionalOnProperty(prefix = "management.schedule", name = "repository-type", havingValue = "jdbc")
+        public ScheduledTaskExecutionRepository jdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate) {
+            return new JdbcScheduledTaskExecutionRepository(scheduledProperties, jdbcTemplate);
+        }
     }
 
 }

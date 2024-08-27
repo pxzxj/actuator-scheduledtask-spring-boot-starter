@@ -1,13 +1,11 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
 
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.lang.Nullable;
 
-import java.util.List;
-
-@Endpoint(id = "scheduledexecutions")
+@Endpoint(id = "scheduledtaskexecutions")
 public class ScheduledTaskExecutionsEndpoint {
 
     private final ScheduledTaskExecutionRepository scheduledTaskExecutionRepository;
@@ -17,13 +15,14 @@ public class ScheduledTaskExecutionsEndpoint {
     }
 
     @ReadOperation
-    public List<ScheduledTaskExecution> query(@Nullable String method, @Nullable String startTime, @Nullable String endTime, int page, int limit) {
-        return scheduledTaskExecutionRepository.query(method, startTime, endTime, page, limit);
+    public Page<ScheduledTaskExecution> query(@Nullable String methodName, @Nullable String startTimeStart, @Nullable String startTimeEnd,
+                                              @Nullable String endTimeStart, @Nullable String endTimeEnd, int page, int size) {
+        return scheduledTaskExecutionRepository.page(methodName, startTimeStart, startTimeEnd, endTimeStart, endTimeEnd, page, size);
     }
 
     @ReadOperation
     public String log(@Selector Long id) {
-        return null;
+        return scheduledTaskExecutionRepository.log(id);
     }
 
 }

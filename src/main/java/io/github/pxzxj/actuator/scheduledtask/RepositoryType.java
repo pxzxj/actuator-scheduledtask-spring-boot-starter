@@ -1,4 +1,4 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
 
 public enum RepositoryType {
 

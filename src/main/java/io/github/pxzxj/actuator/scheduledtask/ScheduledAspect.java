@@ -1,4 +1,4 @@
-package io.github.pxzxj;
+package io.github.pxzxj.actuator.scheduledtask;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.layout.TTLLLayout;
@@ -36,9 +36,9 @@ public class ScheduledAspect {
         layout.start();
         encoder.setLayout(layout);
         byteArrayOutputStreamAppender.setEncoder(encoder);
+        byteArrayOutputStreamAppender.addFilter(new MethodNameFilter(methodName));
         byteArrayOutputStreamAppender.start();
         logger.addAppender(byteArrayOutputStreamAppender);
-        //todo: 方法过滤
         ScheduledTaskExecution scheduledTaskExecution = new ScheduledTaskExecution();
         scheduledTaskExecution.setMethodName(declaringType.getName() + "." + methodName);
         scheduledTaskExecution.setStartTime(LocalDateTime.now());
@@ -46,7 +46,7 @@ public class ScheduledAspect {
         scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStreamAppender);
         try {
             return joinPoint.proceed();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             scheduledTaskExecution.setException(ex.getMessage());
             throw ex;
         } finally {
