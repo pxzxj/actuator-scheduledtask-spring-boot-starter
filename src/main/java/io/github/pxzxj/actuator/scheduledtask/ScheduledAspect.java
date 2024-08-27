@@ -31,7 +31,7 @@ public class ScheduledAspect {
         ByteArrayOutputStreamAppender byteArrayOutputStreamAppender = new ByteArrayOutputStreamAppender();
         byteArrayOutputStreamAppender.setName(methodName + "-byteArray-" + LocalDateTime.now());
         byteArrayOutputStreamAppender.setContext(loggerContext);
-        LayoutWrappingEncoder<ILoggingEvent> encoder = new LayoutWrappingEncoder<ILoggingEvent>();
+        LayoutWrappingEncoder<ILoggingEvent> encoder = new LayoutWrappingEncoder<>();
         encoder.setContext(loggerContext);
         TTLLLayout layout = new TTLLLayout();
         layout.setContext(loggerContext);
