@@ -1,4 +1,4 @@
-= actuator-schedule-spring-boot-starter
+= actuator-scheduletask-spring-boot-starter
 
 
 == TaskDefinition
