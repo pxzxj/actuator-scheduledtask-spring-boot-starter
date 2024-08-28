@@ -40,6 +40,12 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
         } else {
             list = new ArrayList<>(getScheduledTaskHolders());
         }
+        for (ScheduledTaskDefinition scheduledTaskDefinition : list) {
+            if (!scheduledTaskDefinition.getState().equals(ScheduledTaskDefinition.State.CANCELED) &&
+                    canceledScheduledTasks.contains(scheduledTaskDefinition.getScheduledTask())) {
+                scheduledTaskDefinition.setState(ScheduledTaskDefinition.State.CANCELED);
+            }
+        }
         return Page.of(list, page, size);
     }
 
@@ -106,7 +112,7 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
         ScheduledTaskDefinition scheduledTaskDefinition = new ScheduledTaskDefinition();
         scheduledTaskDefinition.setId(index.incrementAndGet());
         scheduledTaskDefinition.setScheduledTask(scheduledTask);
-        scheduledTaskDefinition.setState(canceledScheduledTasks.contains(scheduledTask) ? ScheduledTaskDefinition.State.CANCELED : ScheduledTaskDefinition.State.SCHEDULING);
+        scheduledTaskDefinition.setState(ScheduledTaskDefinition.State.SCHEDULING);
         Task task = scheduledTask.getTask();
         Runnable runnable = task.getRunnable();
         String methodName;

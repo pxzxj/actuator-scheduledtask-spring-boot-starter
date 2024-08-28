@@ -5,6 +5,9 @@ import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.lang.Nullable;
 
+import java.util.Collections;
+import java.util.Map;
+
 @Endpoint(id = "scheduledtaskexecutions")
 public class ScheduledTaskExecutionsEndpoint {
 
@@ -21,8 +24,9 @@ public class ScheduledTaskExecutionsEndpoint {
     }
 
     @ReadOperation
-    public String log(@Selector Long id) {
-        return scheduledTaskExecutionRepository.log(id);
+    public Map<String, Object> log(@Selector Long id) {
+        String log = scheduledTaskExecutionRepository.log(id);
+        return Collections.singletonMap("log", log);
     }
 
 }
