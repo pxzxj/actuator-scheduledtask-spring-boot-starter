@@ -13,7 +13,7 @@ public class Page<T> {
 
     private List<T> data;
 
-    Page(int total, int page, int size, List<T> data) {
+    public Page(int total, int page, int size, List<T> data) {
         this.total = total;
         this.page = page;
         this.size = size;
@@ -56,7 +56,7 @@ public class Page<T> {
         this.data = data;
     }
 
-    static <T> Page<T> of(List<T> list, int page, int size) {
+    public static <T> Page<T> of(List<T> list, int page, int size) {
         int total = list.size();
         int start = page * size;
         if (start >= total) {

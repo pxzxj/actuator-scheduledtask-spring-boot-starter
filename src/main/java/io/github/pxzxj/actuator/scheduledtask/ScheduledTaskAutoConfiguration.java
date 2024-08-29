@@ -6,17 +6,19 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Collection;
 
-//2.7.0之后使用@AutoConfiguration(after = {JdbcTemplateAutoConfiguration.class})
+//2.7.0之后使用@AutoConfiguration
 @Configuration
-@AutoConfigureAfter(JdbcTemplateAutoConfiguration.class)
+@AutoConfigureAfter({JdbcTemplateAutoConfiguration.class, TransactionAutoConfiguration.class})
 @ConditionalOnClass(Logger.class)
 @EnableConfigurationProperties(ScheduledProperties.class)
 public class ScheduledTaskAutoConfiguration {
@@ -38,7 +40,7 @@ public class ScheduledTaskAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "management.schedule", name = "repository-type", havingValue = "memory", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "management.scheduledtask", name = "repository-type", havingValue = "memory", matchIfMissing = true)
     public ScheduledTaskExecutionRepository inMemoryScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties) {
         return new InMemoryScheduledTaskExecutionRepository(scheduledProperties);
     }
@@ -49,9 +51,9 @@ public class ScheduledTaskAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
-        @ConditionalOnProperty(prefix = "management.schedule", name = "repository-type", havingValue = "jdbc")
-        public ScheduledTaskExecutionRepository jdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate) {
-            return new JdbcScheduledTaskExecutionRepository(scheduledProperties, jdbcTemplate);
+        @ConditionalOnProperty(prefix = "management.scheduledtask", name = "repository-type", havingValue = "jdbc")
+        public ScheduledTaskExecutionRepository jdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+            return new JdbcScheduledTaskExecutionRepository(scheduledProperties, jdbcTemplate, transactionTemplate);
         }
     }
 

@@ -1,5 +1,7 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -12,6 +14,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskExecutionRepository {
+
+    private final Logger logger = LoggerFactory.getLogger(InMemoryScheduledTaskExecutionRepository.class);
 
     private final LinkedList<ScheduledTaskExecution> scheduledTaskExecutions;
 
@@ -35,12 +39,18 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
     }
 
     @Override
-    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
-        scheduledTaskExecution.setId(index.incrementAndGet());
-        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
-        readWriteLock.writeLock().lock();
-        scheduledTaskExecutions.addFirst(scheduledTaskExecution);
-        readWriteLock.writeLock().unlock();
+    public boolean start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
+        try {
+            scheduledTaskExecution.setId(index.incrementAndGet());
+            executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
+            readWriteLock.writeLock().lock();
+            scheduledTaskExecutions.addFirst(scheduledTaskExecution);
+            readWriteLock.writeLock().unlock();
+            return true;
+        } catch (Throwable throwable) {
+            logger.error("", throwable);
+        }
+        return false;
     }
 
     @Override

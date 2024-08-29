@@ -9,7 +9,7 @@ public class ScheduledProperties {
 
     private int memorySizeLimit = 20000;
 
-    private String jdbcTableName = "schedule_task_execution";
+    private String jdbcTableName = "scheduledtask_execution";
 
     public RepositoryType getRepositoryType() {
         return repositoryType;

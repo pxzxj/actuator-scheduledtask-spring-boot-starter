@@ -5,11 +5,12 @@ import java.io.ByteArrayOutputStream;
 public interface ScheduledTaskExecutionRepository {
 
     /**
-     * implementations must invoke scheduledTaskExecution.setId
+     *
      * @param scheduledTaskExecution
      * @param byteArrayOutputStream
+     * @return true if start success
      */
-    void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream);
+    boolean start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream);
 
     void finish(ScheduledTaskExecution scheduledTaskExecution);
 

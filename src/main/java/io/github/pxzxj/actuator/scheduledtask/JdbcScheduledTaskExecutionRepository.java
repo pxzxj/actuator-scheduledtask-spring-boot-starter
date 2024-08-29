@@ -1,9 +1,12 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -13,38 +16,62 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecutionRepository {
 
+    private final Logger logger = LoggerFactory.getLogger(JdbcScheduledTaskExecutionRepository.class);
+
     private final JdbcTemplate jdbcTemplate;
+
+    private final TransactionTemplate transactionTemplate;
+
+    private final String tableName;
 
     private final SimpleJdbcInsert simpleJdbcInsert;
 
     private final ConcurrentHashMap<Long, ByteArrayOutputStream> executingTaskLogs = new ConcurrentHashMap<>();
 
-    public JdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate) {
+    public JdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+        this.tableName = scheduledProperties.getJdbcTableName();
         this.jdbcTemplate = jdbcTemplate;
+        this.transactionTemplate = transactionTemplate;
         simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName(scheduledProperties.getJdbcTableName())
+                .withTableName(this.tableName)
                 .usingColumns("method_name", "start_time", "state")
                 .usingGeneratedKeyColumns("id");
     }
 
     @Override
-    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
-        Number number = simpleJdbcInsert.executeAndReturnKey(new BeanPropertySqlParameterSource(scheduledTaskExecution));
-        scheduledTaskExecution.setId(number.longValue());
-        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
+    public boolean start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
+        try {
+            transactionTemplate.execute(status -> {
+                Number number = simpleJdbcInsert.executeAndReturnKey(new BeanPropertySqlParameterSource(scheduledTaskExecution));
+                scheduledTaskExecution.setId(number.longValue());
+                executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
+                return null;
+            });
+            return true;
+        } catch (Throwable throwable) {
+            logger.error("", throwable);
+            return false;
+        }
     }
 
     @Override
     public void finish(ScheduledTaskExecution scheduledTaskExecution) {
-        jdbcTemplate.update("update " + simpleJdbcInsert.getTableName() + " set end_time=?,state=?,log=?,exception=? where id=?",
-                scheduledTaskExecution.getEndTime(), scheduledTaskExecution.getState(), scheduledTaskExecution.getLog(), scheduledTaskExecution.getException(), scheduledTaskExecution.getId());
+        try {
+            transactionTemplate.execute(status -> {
+                jdbcTemplate.update("update " + tableName + " set end_time=?,state=?,log=?,exception=? where id=?",
+                        scheduledTaskExecution.getEndTime(), scheduledTaskExecution.getState().name(), scheduledTaskExecution.getLog(), scheduledTaskExecution.getException(), scheduledTaskExecution.getId());
+                return null;
+            });
+        } catch (Throwable throwable) {
+            logger.error("", throwable);
+        }
         executingTaskLogs.remove(scheduledTaskExecution.getId());
     }
 
     @Override
     public Page<ScheduledTaskExecution> page(String methodName, String startTimeStart, String startTimeEnd, String endTimeStart, String endTimeEnd, int page, int size) {
-        String sql = "select id,method_name,start_time,end_time,state,exception from " + simpleJdbcInsert.getTableName();
-        String countSql = "select count(1) from " + simpleJdbcInsert.getTableName();
+        String sql = "select id,method_name,start_time,end_time,state,exception from " + tableName;
+        String countSql = "select count(1) from " + tableName;
         List<String> conditions = new ArrayList<>();
         if (StringUtils.hasText(methodName)) {
             conditions.add("method_name like '%" + methodName + "%'");
@@ -64,7 +91,7 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
             conditions.add("end_time<'" + endTimeEnd + "'");
         }
         if (!conditions.isEmpty()) {
-            String whereCondition = StringUtils.collectionToDelimitedString(conditions, " and ", "where ", "");
+            String whereCondition = " where " + StringUtils.collectionToDelimitedString(conditions, " and ");
             sql += whereCondition;
             countSql += whereCondition;
         }
@@ -80,7 +107,7 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
         if (byteArrayOutputStream != null) {
             return byteArrayOutputStream.toString();
         }
-        return (String) jdbcTemplate.queryForList("select log from " + simpleJdbcInsert.getTableName() + " where id=?", id).get(0).get("log");
+        return (String) jdbcTemplate.queryForList("select log from " + tableName + " where id=?", id).get(0).get("log");
     }
 
 }

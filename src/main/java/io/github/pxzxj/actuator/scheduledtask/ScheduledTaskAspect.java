@@ -65,19 +65,21 @@ public class ScheduledTaskAspect {
         scheduledTaskExecution.setMethodName(classMethodName);
         scheduledTaskExecution.setStartTime(LocalDateTime.now());
         scheduledTaskExecution.setState(ScheduledTaskExecution.State.EXECUTING);
-        scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStream);
+        boolean start = scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStream);
         try {
             return joinPoint.proceed();
         } catch (Throwable throwable) {
             scheduledTaskExecution.setException(readStackTrace(throwable));
             throw throwable;
         } finally {
-            scheduledTaskExecution.setState(ScheduledTaskExecution.State.FINISHED);
-            scheduledTaskExecution.setLog(byteArrayOutputStream.toString());
-            scheduledTaskExecution.setEndTime(LocalDateTime.now());
-            scheduledTaskExecutionRepository.finish(scheduledTaskExecution);
             byteArrayOutputStreamAppender.stop();
             byteArrayOutputStreamAppender.setByteArrayOutputStream(null);
+            if (start) {
+                scheduledTaskExecution.setState(ScheduledTaskExecution.State.FINISHED);
+                scheduledTaskExecution.setLog(byteArrayOutputStream.toString());
+                scheduledTaskExecution.setEndTime(LocalDateTime.now());
+                scheduledTaskExecutionRepository.finish(scheduledTaskExecution);
+            }
         }
     }
 
