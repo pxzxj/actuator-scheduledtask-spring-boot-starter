@@ -2,6 +2,7 @@ package io.github.pxzxj.actuator.scheduledtask;
 
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -18,7 +19,7 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
 
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
-    private final ConcurrentHashMap<Long, ByteArrayOutputStreamAppender> executingTaskLogs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ByteArrayOutputStream> executingTaskLogs = new ConcurrentHashMap<>();
 
     public InMemoryScheduledTaskExecutionRepository(ScheduledProperties actuatorScheduledProperties) {
         int memorySizeLimit = actuatorScheduledProperties.getMemorySizeLimit();
@@ -34,9 +35,9 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
     }
 
     @Override
-    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStreamAppender byteArrayOutputStreamAppender) {
+    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
         scheduledTaskExecution.setId(index.incrementAndGet());
-        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStreamAppender);
+        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
         readWriteLock.writeLock().lock();
         scheduledTaskExecutions.addFirst(scheduledTaskExecution);
         readWriteLock.writeLock().unlock();
@@ -77,9 +78,9 @@ public class InMemoryScheduledTaskExecutionRepository implements ScheduledTaskEx
 
     @Override
     public String log(Long id) {
-        ByteArrayOutputStreamAppender byteArrayOutputStreamAppender = executingTaskLogs.get(id);
-        if (byteArrayOutputStreamAppender != null) {
-            return byteArrayOutputStreamAppender.getLoggingContent();
+        ByteArrayOutputStream byteArrayOutputStream = executingTaskLogs.get(id);
+        if (byteArrayOutputStream != null) {
+            return byteArrayOutputStream.toString();
         }
         readWriteLock.readLock().lock();
         String log = scheduledTaskExecutions.stream().filter(ext -> ext.getId().equals(id)).findFirst().map(ScheduledTaskExecution::getLog).orElse(null);

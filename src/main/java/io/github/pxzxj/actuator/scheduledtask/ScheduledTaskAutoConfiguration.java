@@ -1,7 +1,7 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
 import ch.qos.logback.classic.Logger;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,10 +14,12 @@ import org.springframework.scheduling.config.ScheduledTaskHolder;
 
 import java.util.Collection;
 
-@AutoConfiguration(after = {JdbcTemplateAutoConfiguration.class})
+//2.7.0之后使用@AutoConfiguration(after = {JdbcTemplateAutoConfiguration.class})
+@Configuration
+@AutoConfigureAfter(JdbcTemplateAutoConfiguration.class)
 @ConditionalOnClass(Logger.class)
 @EnableConfigurationProperties(ScheduledProperties.class)
-public class ScheduledAutoConfiguration {
+public class ScheduledTaskAutoConfiguration {
 
     @Bean
     public ScheduledTaskDefinitionsEndpoint scheduledTaskDefinitionsEndpoint(Collection<ScheduledTaskHolder> scheduledTaskHolders) {
@@ -30,8 +32,8 @@ public class ScheduledAutoConfiguration {
     }
 
     @Bean
-    public ScheduledAspect scheduledAspect(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
-        return new ScheduledAspect(scheduledTaskExecutionRepository);
+    public ScheduledTaskAspect scheduledTaskAspect(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
+        return new ScheduledTaskAspect(scheduledTaskExecutionRepository);
     }
 
     @Bean

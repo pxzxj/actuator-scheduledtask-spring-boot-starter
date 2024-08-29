@@ -11,9 +11,11 @@ import org.springframework.scheduling.support.ScheduledMethodRunnable;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -23,8 +25,6 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
     private final Collection<ScheduledTaskHolder> scheduledTaskHolders;
 
     private final List<ScheduledTaskDefinition> scheduledTaskDefinitions = new CopyOnWriteArrayList<>();
-
-    private final Set<ScheduledTask> canceledScheduledTasks = new CopyOnWriteArraySet<>();
 
     private final AtomicInteger index = new AtomicInteger();
 
@@ -40,12 +40,6 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
         } else {
             list = new ArrayList<>(getScheduledTaskHolders());
         }
-        for (ScheduledTaskDefinition scheduledTaskDefinition : list) {
-            if (!scheduledTaskDefinition.getState().equals(ScheduledTaskDefinition.State.CANCELED) &&
-                    canceledScheduledTasks.contains(scheduledTaskDefinition.getScheduledTask())) {
-                scheduledTaskDefinition.setState(ScheduledTaskDefinition.State.CANCELED);
-            }
-        }
         return Page.of(list, page, size);
     }
 
@@ -59,13 +53,12 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
     }
 
     private void cancel(Integer id) {
-        ScheduledTask scheduledTask = getScheduledTaskHolders().stream()
+        ScheduledTaskDefinition scheduledTaskDefinition = getScheduledTaskHolders().stream()
                 .filter(def -> def.getId().equals(id))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("scheduledTaskDefinition not found for id " + id))
-                .getScheduledTask();
-        scheduledTask.cancel();
-        canceledScheduledTasks.add(scheduledTask);
+                .orElseThrow(() -> new IllegalArgumentException("scheduledTaskDefinition not found for id " + id));
+        scheduledTaskDefinition.setState(ScheduledTaskDefinition.State.CANCELED);
+        scheduledTaskDefinition.getScheduledTask().cancel();
     }
 
     private void execute(Integer id) {

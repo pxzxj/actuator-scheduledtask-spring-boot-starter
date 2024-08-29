@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +17,7 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
 
     private final SimpleJdbcInsert simpleJdbcInsert;
 
-    private final ConcurrentHashMap<Long, ByteArrayOutputStreamAppender> executingTaskLogs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ByteArrayOutputStream> executingTaskLogs = new ConcurrentHashMap<>();
 
     public JdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -27,10 +28,10 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
     }
 
     @Override
-    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStreamAppender byteArrayOutputStreamAppender) {
+    public void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream) {
         Number number = simpleJdbcInsert.executeAndReturnKey(new BeanPropertySqlParameterSource(scheduledTaskExecution));
         scheduledTaskExecution.setId(number.longValue());
-        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStreamAppender);
+        executingTaskLogs.put(scheduledTaskExecution.getId(), byteArrayOutputStream);
     }
 
     @Override
@@ -75,9 +76,9 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
 
     @Override
     public String log(Long id) {
-        ByteArrayOutputStreamAppender byteArrayOutputStreamAppender = executingTaskLogs.get(id);
-        if (byteArrayOutputStreamAppender != null) {
-            return byteArrayOutputStreamAppender.getLoggingContent();
+        ByteArrayOutputStream byteArrayOutputStream = executingTaskLogs.get(id);
+        if (byteArrayOutputStream != null) {
+            return byteArrayOutputStream.toString();
         }
         return (String) jdbcTemplate.queryForList("select log from " + simpleJdbcInsert.getTableName() + " where id=?", id).get(0).get("log");
     }

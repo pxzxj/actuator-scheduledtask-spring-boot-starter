@@ -1,20 +1,26 @@
 = actuator-scheduletask-spring-boot-starter
 
 
-== TaskDefinition
+== Requirement
 
-ID、方法、状态(调度中、已取消)、cron、fixedDelay、fixedRate
-
-== TaskExecution
-
-ID、方法、执行开始时间、执行结束时间、状态(执行中、已结束)、日志信息、是否存在异常、异常信息
-
-== 配置属性
-
-* 内存大小限制
-* 表名称
+* Logback
+* Spring Boot 2.x
+* 不能是private方法
 
 == todo
 
 * 理论上执行中的任务也可以执行取消操作，但能否真正取消还是取决于任务内容
 * 文档建议使用默认的内存存储
+* 长时间运行任务查看日志
+* 任务抛出异常
+* 自己实现Repository Bean
+* 页面查看异常信息
+* 并发测试
+* 内存容量测试
+* 收集整个调用链的日志，通过属性 `enableCalleeLog` 控制
+* 说明什么级别之上日志才会记录
+* 内存占用说明
+* 要求Logger使用类型命名
+
+== 配置项
+

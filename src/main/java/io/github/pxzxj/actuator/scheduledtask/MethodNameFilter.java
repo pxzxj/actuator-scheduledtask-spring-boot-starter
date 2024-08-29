@@ -6,19 +6,29 @@ import ch.qos.logback.core.spi.FilterReply;
 
 public class MethodNameFilter extends Filter<ILoggingEvent> {
 
+    private final String expectedClassName;
     private final String expectedMethodName;
 
-    public MethodNameFilter(String expectedMethodName) {
+    public MethodNameFilter(String expectedClassName, String expectedMethodName) {
+        this.expectedClassName = expectedClassName;
         this.expectedMethodName = expectedMethodName;
     }
 
     @Override
     public FilterReply decide(ILoggingEvent event) {
         StackTraceElement[] cda = event.getCallerData();
-        if (cda != null && cda.length > 0 && !expectedMethodName.equals(cda[0].getMethodName())) {
+        if (cda != null && cda.length > 0) {
+            boolean match = false;
+            for (StackTraceElement stackTraceElement : cda) {
+                if (stackTraceElement.getClassName().equals(expectedClassName) && stackTraceElement.getMethodName().equals(expectedMethodName)) {
+                    return FilterReply.NEUTRAL;
+                }
+            }
             return FilterReply.DENY;
+
+        } else {
+            return FilterReply.NEUTRAL;
         }
-        return FilterReply.NEUTRAL;
     }
 
 }

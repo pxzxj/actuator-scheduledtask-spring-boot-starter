@@ -1,8 +1,15 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
+import java.io.ByteArrayOutputStream;
+
 public interface ScheduledTaskExecutionRepository {
 
-    void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStreamAppender byteArrayOutputStreamAppender);
+    /**
+     * implementations must invoke scheduledTaskExecution.setId
+     * @param scheduledTaskExecution
+     * @param byteArrayOutputStream
+     */
+    void start(ScheduledTaskExecution scheduledTaskExecution, ByteArrayOutputStream byteArrayOutputStream);
 
     void finish(ScheduledTaskExecution scheduledTaskExecution);
 

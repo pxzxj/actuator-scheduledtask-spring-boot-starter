@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 
 public class ByteArrayOutputStreamAppender extends OutputStreamAppender<ILoggingEvent> {
 
-    private final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    private ByteArrayOutputStream byteArrayOutputStream;
 
     @Override
     public void start() {
@@ -15,8 +15,7 @@ public class ByteArrayOutputStreamAppender extends OutputStreamAppender<ILogging
         super.start();
     }
 
-    public String getLoggingContent() {
-        return byteArrayOutputStream.toString();
+    void setByteArrayOutputStream(ByteArrayOutputStream byteArrayOutputStream) {
+        this.byteArrayOutputStream = byteArrayOutputStream;
     }
-
 }
