@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * based on MySQL sql
+ */
 public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecutionRepository {
 
     private final Logger logger = LoggerFactory.getLogger(JdbcScheduledTaskExecutionRepository.class);
