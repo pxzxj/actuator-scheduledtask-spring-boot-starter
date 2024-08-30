@@ -1,26 +1,46 @@
-= actuator-scheduletask-spring-boot-starter
+= actuator-scheduledtask-spring-boot-starter
+
+== 简介
 
 
-== Requirement
+== 功能说明
+
+
+== 使用方法
+
+=== Requirement
 
 * Logback
 * Spring Boot 2.x
 * 不能是private方法
 
+
+=== 执行记录存储
+
+建议使用默认的内存存储
+
+自己实现Repository Bean
+
+=== 执行日志
+
+支持长时间运行任务查看日志
+
+要求Logger使用类型命名，说明什么级别之上日志才会记录
+
+=== 执行异常
+
+任务抛出异常
+
+=== 配置项
+
+
+
+== 杂项
+
+=== 内存占用测试
+
+
 == todo
 
-* 理论上执行中的任务也可以执行取消操作，但能否真正取消还是取决于任务内容
-* 文档建议使用默认的内存存储
-* 长时间运行任务查看日志
-* 任务抛出异常
-* 自己实现Repository Bean
-* 页面查看异常信息
 * 并发测试
-* 内存容量测试
 * 收集整个调用链的日志，通过属性 `enableCalleeLog` 控制
-* 说明什么级别之上日志才会记录
-* 内存占用说明
-* 要求Logger使用类型命名
-
-== 配置项
-
