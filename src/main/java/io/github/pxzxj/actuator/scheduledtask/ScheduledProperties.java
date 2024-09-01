@@ -7,7 +7,7 @@ public class ScheduledProperties {
 
     private RepositoryType repositoryType = RepositoryType.MEMORY;
 
-    private int memorySizeLimit = 20000;
+    private int memorySizeLimit = 10000;
 
     private String jdbcTableName = "scheduledtask_execution";
 
