@@ -1,6 +1,9 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
 import ch.qos.logback.classic.Logger;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -10,7 +13,9 @@ import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfigu
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -34,8 +39,10 @@ public class ScheduledTaskAutoConfiguration {
     }
 
     @Bean
-    public ScheduledTaskAspect scheduledTaskAspect(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
-        return new ScheduledTaskAspect(scheduledTaskExecutionRepository);
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    public DefaultPointcutAdvisor scheduledTaskExecutionSaveAdvisor(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
+        return new DefaultPointcutAdvisor(AnnotationMatchingPointcut.forMethodAnnotation(Scheduled.class),
+                new ScheduledTaskExecutionSaveMethodInterceptor(scheduledTaskExecutionRepository));
     }
 
     @Bean

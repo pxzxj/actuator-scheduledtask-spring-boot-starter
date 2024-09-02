@@ -79,7 +79,7 @@ public class ScheduledTaskExecution {
 
     public enum State {
 
-        EXECUTING, FINISHED;
+        EXECUTING, FINISHED
 
     }
 }

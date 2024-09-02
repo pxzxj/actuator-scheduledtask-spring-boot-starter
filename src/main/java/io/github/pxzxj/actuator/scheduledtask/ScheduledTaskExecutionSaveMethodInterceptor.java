@@ -5,9 +5,8 @@ import ch.qos.logback.classic.layout.TTLLLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -15,25 +14,19 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
 
-@Aspect
-public class ScheduledTaskAspect {
+public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterceptor {
 
     private final ScheduledTaskExecutionRepository scheduledTaskExecutionRepository;
 
-    public ScheduledTaskAspect(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
+    public ScheduledTaskExecutionSaveMethodInterceptor(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
         this.scheduledTaskExecutionRepository = scheduledTaskExecutionRepository;
     }
 
-    /**
-     * @see ch.qos.logback.classic.BasicConfigurator
-     * @param joinPoint
-     * @return
-     * @throws Throwable
-     */
-    @Around("@annotation(org.springframework.scheduling.annotation.Scheduled) || @annotation(org.springframework.scheduling.annotation.Schedules)")
-    public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
-        Class<?> declaringType = joinPoint.getSignature().getDeclaringType();
-        String methodName = joinPoint.getSignature().getName();
+
+    @Override
+    public Object invoke(MethodInvocation methodInvocation) throws Throwable {
+        Class<?> declaringType = methodInvocation.getThis().getClass();
+        String methodName = methodInvocation.getMethod().getName();
         String classMethodName = declaringType.getName() + "." + methodName;
         String appenderName = classMethodName + ".byteArrayAppender";
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -67,7 +60,7 @@ public class ScheduledTaskAspect {
         scheduledTaskExecution.setState(ScheduledTaskExecution.State.EXECUTING);
         boolean start = scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStream);
         try {
-            return joinPoint.proceed();
+            return methodInvocation.proceed();
         } catch (Throwable throwable) {
             scheduledTaskExecution.setException(readStackTrace(throwable));
             throw throwable;
@@ -83,6 +76,7 @@ public class ScheduledTaskAspect {
         }
     }
 
+
     private String readStackTrace(Throwable throwable) {
         StringWriter stringWriter = new StringWriter();
         try (PrintWriter printWriter = new PrintWriter(stringWriter)) {
@@ -90,5 +84,6 @@ public class ScheduledTaskAspect {
         }
         return stringWriter.toString();
     }
+
 
 }

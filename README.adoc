@@ -31,14 +31,13 @@ image::images/log.png[]
 
 * Spring Boot 2.x
 * Spring Boot Actuator
-* Spring Boot AOP
 * Logback
 * `@Scheduled` 声明的方法非private
 
 === 安装配置
 
 首先在Spring Boot项目的 `pom.xml` 中添加 `actuator-scheduledtask-spring-boot-starter` 依赖和
-它依赖的 `actuator` 依赖和 `aop` 依赖，如果项目中已经添加过 `actuator` 或 `aop` 则不必重复添加
+它依赖的 `actuator` 依赖，如果项目中已经添加过 `actuator` 则不必重复添加
 
 [source,xml,subs="verbatim"]
 ----
@@ -47,10 +46,6 @@ image::images/log.png[]
             <groupId>io.github.pxzxj</groupId>
             <artifactId>actuator-scheduledtask-spring-boot-starter</artifactId>
             <version>2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -117,7 +112,7 @@ public class ScheduledTaskExecution {
 
     public enum State {
 
-        EXECUTING, FINISHED;
+        EXECUTING, FINISHED
 
     }
 }

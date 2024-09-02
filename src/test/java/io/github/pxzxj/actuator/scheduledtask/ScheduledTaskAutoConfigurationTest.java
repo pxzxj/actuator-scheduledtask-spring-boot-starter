@@ -24,7 +24,6 @@ public class ScheduledTaskAutoConfigurationTest {
         contextRunner
                 .run(context -> {
                     assertThat(context).hasSingleBean(ScheduledTaskExecutionRepository.class);
-                    assertThat(context).hasSingleBean(ScheduledTaskAspect.class);
                     assertThat(context).hasSingleBean(ScheduledTaskExecutionsEndpoint.class);
                     assertThat(context).hasSingleBean(ScheduledTaskDefinitionsEndpoint.class);
 
