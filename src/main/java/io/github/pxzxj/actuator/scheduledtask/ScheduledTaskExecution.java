@@ -77,7 +77,7 @@ public class ScheduledTaskExecution {
         this.exception = exception;
     }
 
-    enum State {
+    public enum State {
 
         EXECUTING, FINISHED;
 

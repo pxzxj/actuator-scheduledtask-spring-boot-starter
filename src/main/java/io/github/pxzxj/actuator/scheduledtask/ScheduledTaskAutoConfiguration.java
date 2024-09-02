@@ -17,7 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.Collection;
 
 //2.7.0之后使用@AutoConfiguration
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter({JdbcTemplateAutoConfiguration.class, TransactionAutoConfiguration.class})
 @ConditionalOnClass(Logger.class)
 @EnableConfigurationProperties(ScheduledProperties.class)

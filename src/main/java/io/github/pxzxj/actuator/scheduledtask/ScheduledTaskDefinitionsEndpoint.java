@@ -67,7 +67,7 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("scheduledTaskDefinition not found for id " + id));
         Thread thread = new Thread(scheduledTaskDefinition.getScheduledTask().getTask().getRunnable());
-        thread.setName(scheduledTaskDefinition.getMethodName() + "_test");
+        thread.setName(scheduledTaskDefinition.getMethodName() + "_test_" + scheduledTaskDefinition.getId());
         thread.start();
     }
 
