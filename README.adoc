@@ -32,7 +32,7 @@ image::images/log.png[]
 * Spring Boot 2.x
 * Spring Boot Actuator
 * Logback
-* `@Scheduled` 声明的方法非private
+* `@Scheduled` 注解方法非private非final
 
 === 安装配置
 
@@ -90,7 +90,7 @@ WARNING: 开放Actuator的相关接口会带来安全问题，可以根据项目
 使用内存存储的另一点值得关注的当然是对内存的占用，因为保存任务执行记录的 `LinkedList` 是常驻内存中不会清理的，如果它占用的内存过大势必影响其它代码的正常执行，下面对它的内存占用做详细分析
 
 `LinkedList` 中保存的是如下 `ScheduledTaskExecution` 类的实例，可以看到它的 `id`、`methodName`、`startTime`、`endTime`、`state` 这些属性对内存的占用是基本确定的，主要的不确定性还是集中在 `log` 和 `exception` 上，
-，经过测试在 `log` 和 `exception` 都设置为 `null` 的情况下 `LinkedList` 中添加10000个 `ScheduledTaskExecution` 对象占用的堆内存也只不过10M左右基本上可以忽略，因而我们实际只需要考虑 `log` 和 `exception` 的大小即可，下面以一个实际的示例进行进一步的说明
+经过测试在 `log` 和 `exception` 都设置为 `null` 的情况下 `LinkedList` 中添加10000个 `ScheduledTaskExecution` 对象占用的堆内存也只不过10M左右基本上可以忽略，因而我们实际只需要考虑 `log` 和 `exception` 的大小即可，下面以一个实际的示例进行进一步的说明
 
 [source,java,subs="verbatim"]
 ----
@@ -210,8 +210,8 @@ create table scheduledtask_execution(
 `actuator-scheduledtask-spring-boot-starter` 中的jdbc存储主要是基于MySQL相关语法执行sql的，
 如果项目使用的是其他数据库不一定支持，此时可以参考 <<customize, 下一节>> 的自定义存储
 
-NOTE: 由于数据库存储会把所有任务执行记录都保存下来，在存在一些执行频率很高的定时任务时有可能会导致单表数量过多的问题，
-因此需要评估项目的调度任务情况时再谨慎选择
+NOTE: 由于数据库存储会把所有任务执行记录都保存下来，在存在一些执行频率很高的定时任务时有可能会导致单表数据量过大的问题，
+因此需要评估项目的调度任务情况再谨慎选择
 
 [[customize]]
 ==== 自定义
@@ -260,7 +260,7 @@ public class MyScheduledTaskExecutionRepository implements ScheduledTaskExecutio
 再次是日志格式，与默认的控制台中的日志格式是一致的，因为它们使用的都是Logback中的 `TTLLLayout` 格式
 
 最后是记录的范围，只会记录 `@Scheduled` 声明的方法所属类中记录的日志，也就是如果在方法执行过程中调用了当前类的方法，这些方法中的日志会记录，
-如果调用了其它类的方法，方法中的日志不会记录，以下面的代码为例，最早的调度任务执行日志中会包含myMethod1和myMethod2，但不会包含otherMethod
+如果调用了其它类的方法，方法中的日志不会记录，以下面的代码为例，最终的调度任务执行日志中会包含myMethod1和myMethod2，但不会包含otherMethod
 
 [source,java,subs="verbatim"]
 ----

@@ -8,6 +8,7 @@ import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.support.AopUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -25,7 +26,7 @@ public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterc
 
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-        Class<?> declaringType = methodInvocation.getThis().getClass();
+        Class<?> declaringType = AopUtils.getTargetClass(methodInvocation.getThis());
         String methodName = methodInvocation.getMethod().getName();
         String classMethodName = declaringType.getName() + "." + methodName;
         String appenderName = classMethodName + ".byteArrayAppender";
