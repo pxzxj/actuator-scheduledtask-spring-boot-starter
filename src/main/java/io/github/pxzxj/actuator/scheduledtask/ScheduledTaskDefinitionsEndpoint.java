@@ -8,6 +8,7 @@ import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
 import org.springframework.lang.Nullable;
 import org.springframework.scheduling.config.*;
 import org.springframework.scheduling.support.ScheduledMethodRunnable;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
@@ -111,7 +112,7 @@ public class ScheduledTaskDefinitionsEndpoint implements InitializingBean {
         String methodName;
         if (runnable instanceof ScheduledMethodRunnable) {
             Method method = ((ScheduledMethodRunnable) runnable).getMethod();
-            methodName = method.getDeclaringClass().getName() + "." + method.getName();
+            methodName = ClassUtils.getQualifiedMethodName(method);
         }
         else {
             methodName = runnable.getClass().getName();

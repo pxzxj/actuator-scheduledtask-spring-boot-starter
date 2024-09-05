@@ -9,10 +9,12 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.util.ClassUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterceptor {
@@ -26,12 +28,12 @@ public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterc
 
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-        Class<?> declaringType = AopUtils.getTargetClass(methodInvocation.getThis());
-        String methodName = methodInvocation.getMethod().getName();
-        String classMethodName = declaringType.getName() + "." + methodName;
-        String appenderName = classMethodName + ".byteArrayAppender";
+        Class<?> clazz = AopUtils.getTargetClass(methodInvocation.getThis());
+        Method method = methodInvocation.getMethod();
+        String qualifiedMethodName = ClassUtils.getQualifiedMethodName(method, clazz);
+        String appenderName = qualifiedMethodName + ".byteArrayAppender";
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(declaringType);
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(clazz);
         Appender<ILoggingEvent> appender = logger.getAppender(appenderName);
         ByteArrayOutputStreamAppender byteArrayOutputStreamAppender;
         if (appender != null) {
@@ -51,12 +53,12 @@ public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterc
             layout.start();
             encoder.setLayout(layout);
             byteArrayOutputStreamAppender.setEncoder(encoder);
-            byteArrayOutputStreamAppender.addFilter(new MethodNameFilter(declaringType.getName(), methodName));
+            byteArrayOutputStreamAppender.addFilter(new MethodNameFilter(clazz.getName(), method.getName()));
             byteArrayOutputStreamAppender.start();
             logger.addAppender(byteArrayOutputStreamAppender);
         }
         ScheduledTaskExecution scheduledTaskExecution = new ScheduledTaskExecution();
-        scheduledTaskExecution.setMethodName(classMethodName);
+        scheduledTaskExecution.setMethodName(qualifiedMethodName);
         scheduledTaskExecution.setStartTime(LocalDateTime.now());
         scheduledTaskExecution.setState(ScheduledTaskExecution.State.EXECUTING);
         boolean start = scheduledTaskExecutionRepository.start(scheduledTaskExecution, byteArrayOutputStream);
