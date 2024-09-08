@@ -6,7 +6,7 @@
 
     <groupId>io.github.pxzxj</groupId>
     <artifactId>actuator-scheduledtask-spring-boot-starter</artifactId>
-    <version>2.0</version>
+    <version>2.1</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>A Spring Boot Starter for @Scheduled task execution management</description>

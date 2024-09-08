@@ -31,6 +31,7 @@ image::images/log.png[]
 === 要求
 
 * Spring Boot 2.x
+* Spring Boot Web
 * Spring Boot Actuator
 * Logback
 * `@Scheduled` 注解方法非private非final
