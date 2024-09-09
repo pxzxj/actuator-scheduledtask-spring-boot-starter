@@ -9,6 +9,9 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.util.ClassUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -17,17 +20,17 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
-public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterceptor {
+public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterceptor, BeanFactoryAware {
 
-    private final ScheduledTaskExecutionRepository scheduledTaskExecutionRepository;
+    private ScheduledTaskExecutionRepository scheduledTaskExecutionRepository;
 
-    public ScheduledTaskExecutionSaveMethodInterceptor(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
-        this.scheduledTaskExecutionRepository = scheduledTaskExecutionRepository;
-    }
-
+    private BeanFactory beanFactory;
 
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
+        if (scheduledTaskExecutionRepository == null) {
+            setScheduledTaskExecutionRepository();
+        }
         Class<?> clazz = AopUtils.getTargetClass(methodInvocation.getThis());
         Method method = methodInvocation.getMethod();
         String qualifiedMethodName = ClassUtils.getQualifiedMethodName(method, clazz);
@@ -88,5 +91,17 @@ public class ScheduledTaskExecutionSaveMethodInterceptor implements MethodInterc
         return stringWriter.toString();
     }
 
+    /**
+     * use Dependency Lookup to avoid scheduledTaskExecutionRepository and its autowired beans eager initialization
+     */
+    private synchronized void setScheduledTaskExecutionRepository() {
+        if (scheduledTaskExecutionRepository == null) {
+            scheduledTaskExecutionRepository = beanFactory.getBean(ScheduledTaskExecutionRepository.class);
+        }
+    }
 
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+    }
 }

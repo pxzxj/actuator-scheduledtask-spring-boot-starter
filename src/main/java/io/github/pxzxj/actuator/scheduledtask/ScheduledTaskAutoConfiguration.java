@@ -45,9 +45,15 @@ public class ScheduledTaskAutoConfiguration {
 
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    public DefaultPointcutAdvisor scheduledTaskExecutionSaveAdvisor(ScheduledTaskExecutionRepository scheduledTaskExecutionRepository) {
+    public DefaultPointcutAdvisor scheduledTaskExecutionSaveAdvisor(ScheduledTaskExecutionSaveMethodInterceptor scheduledTaskExecutionSaveMethodInterceptor) {
         return new DefaultPointcutAdvisor(AnnotationMatchingPointcut.forMethodAnnotation(Scheduled.class),
-                new ScheduledTaskExecutionSaveMethodInterceptor(scheduledTaskExecutionRepository));
+                scheduledTaskExecutionSaveMethodInterceptor);
+    }
+
+    @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    public ScheduledTaskExecutionSaveMethodInterceptor scheduledTaskExecutionSaveMethodInterceptor() {
+        return new ScheduledTaskExecutionSaveMethodInterceptor();
     }
 
     @Bean
