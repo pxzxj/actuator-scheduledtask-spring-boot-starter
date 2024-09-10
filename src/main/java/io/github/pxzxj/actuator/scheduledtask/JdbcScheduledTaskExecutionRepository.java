@@ -1,23 +1,29 @@
 package io.github.pxzxj.actuator.scheduledtask;
 
+import io.github.pxzxj.actuator.scheduledtask.dialect.PagingProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
+import java.sql.DatabaseMetaData;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * based on MySQL sql
- */
-public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecutionRepository {
+public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecutionRepository, InitializingBean {
 
     private final Logger logger = LoggerFactory.getLogger(JdbcScheduledTaskExecutionRepository.class);
 
@@ -29,6 +35,8 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
 
     private final SimpleJdbcInsert simpleJdbcInsert;
 
+    private PagingProcessor pagingProcessor;
+
     private final ConcurrentHashMap<Long, ByteArrayOutputStream> executingTaskLogs = new ConcurrentHashMap<>();
 
     public JdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
@@ -39,6 +47,11 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
                 .withTableName(this.tableName)
                 .usingColumns("method_name", "start_time", "state")
                 .usingGeneratedKeyColumns("id");
+    }
+
+    public JdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate, PagingProcessor pagingProcessor) {
+        this(scheduledProperties, jdbcTemplate, transactionTemplate);
+        this.pagingProcessor = pagingProcessor;
     }
 
     @Override
@@ -75,32 +88,45 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
     public Page<ScheduledTaskExecution> page(String methodName, String startTimeStart, String startTimeEnd, String endTimeStart, String endTimeEnd, int page, int size) {
         String sql = "select id,method_name,start_time,end_time,state,exception from " + tableName;
         String countSql = "select count(1) from " + tableName;
+        List<Object> parameters = new ArrayList<>();
         List<String> conditions = new ArrayList<>();
         if (StringUtils.hasText(methodName)) {
-            conditions.add("method_name like '%" + methodName + "%'");
+            conditions.add("method_name like ?");
+            parameters.add("%" + methodName + "%");
         }
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         if (StringUtils.hasText(startTimeStart) && StringUtils.hasText(startTimeEnd)) {
-            conditions.add("start_time between '" + startTimeStart + "' and '" + startTimeEnd + "'");
+            conditions.add("start_time between ? and ?");
+            parameters.add(LocalDateTime.parse(startTimeStart, dateTimeFormatter));
+            parameters.add(LocalDateTime.parse(startTimeEnd, dateTimeFormatter));
         } else if(StringUtils.hasText(startTimeStart)) {
-            conditions.add("start_time>'" + startTimeStart + "'");
+            conditions.add("start_time > ?");
+            parameters.add(LocalDateTime.parse(startTimeStart, dateTimeFormatter));
         } else if (StringUtils.hasText(startTimeEnd)) {
-            conditions.add("start_time<'" + startTimeEnd);
+            conditions.add("start_time < ?");
+            parameters.add(LocalDateTime.parse(startTimeEnd, dateTimeFormatter));
         }
         if (StringUtils.hasText(endTimeStart) && StringUtils.hasText(endTimeEnd)) {
-            conditions.add("end_time between '" + endTimeStart + "' and '" + endTimeEnd + "'");
+            conditions.add("end_time between ? and ?");
+            parameters.add(LocalDateTime.parse(endTimeStart, dateTimeFormatter));
+            parameters.add(LocalDateTime.parse(endTimeEnd, dateTimeFormatter));
         } else if (StringUtils.hasText(endTimeStart)) {
-            conditions.add("end_time>'" + endTimeStart + "'");
+            conditions.add("end_time > ?");
+            parameters.add(LocalDateTime.parse(endTimeStart, dateTimeFormatter));
         } else if (StringUtils.hasText(endTimeEnd)) {
-            conditions.add("end_time<'" + endTimeEnd + "'");
+            conditions.add("end_time < ?");
+            parameters.add(LocalDateTime.parse(endTimeEnd, dateTimeFormatter));
         }
         if (!conditions.isEmpty()) {
             String whereCondition = " where " + StringUtils.collectionToDelimitedString(conditions, " and ");
             sql += whereCondition;
             countSql += whereCondition;
         }
-        sql += " order by id desc limit " + (page * size) + "," + size;
-        Integer count = jdbcTemplate.queryForObject(countSql, Integer.class);
-        List<ScheduledTaskExecution> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ScheduledTaskExecution.class));
+        Integer count = jdbcTemplate.queryForObject(countSql, parameters.toArray(), Integer.class);
+        sql += " order by id desc ";
+        sql = pagingProcessor.getPagingSql(sql);
+        pagingProcessor.processParameters(page, size, parameters);
+        List<ScheduledTaskExecution> list = jdbcTemplate.query(sql, parameters.toArray(), new BeanPropertyRowMapper<>(ScheduledTaskExecution.class));
         return new Page<>(count, page, size, list);
     }
 
@@ -113,4 +139,24 @@ public class JdbcScheduledTaskExecutionRepository implements ScheduledTaskExecut
         return (String) jdbcTemplate.queryForList("select log from " + tableName + " where id=?", id).get(0).get("log");
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if (pagingProcessor == null) {
+            DatabaseDriver databaseDriver = getDatabaseDriver(jdbcTemplate.getDataSource());
+            Assert.state(databaseDriver != DatabaseDriver.UNKNOWN, "Unable to detect database type");
+            pagingProcessor = PagingProcessor.getPagingProcessorByDatabaseDriver(databaseDriver);
+            Assert.notNull(pagingProcessor, "no PagingProcessor found for " + databaseDriver);
+        }
+    }
+
+    DatabaseDriver getDatabaseDriver(DataSource dataSource) {
+        try {
+            String productName = JdbcUtils.commonDatabaseName(
+                    JdbcUtils.extractDatabaseMetaData(dataSource, DatabaseMetaData::getDatabaseProductName));
+            return DatabaseDriver.fromProductName(productName);
+        }
+        catch (Exception ex) {
+            throw new IllegalStateException("Failed to determine DatabaseDriver", ex);
+        }
+    }
 }

@@ -196,6 +196,7 @@ java.lang.NullPointerException: null
 使用数据库存储会把任务执行记录保存到一张表中，默认的表名是 `scheduledtask_execution`，
 可以通过 `management.scheduledtask.jdbc-table-name` 配置项修改表名，当然还需要手动执行如下的sql在数据库中创建表
 
+.MySQL
 [source,sql,subs="verbatim"]
 ----
 create table scheduledtask_execution(
@@ -209,8 +210,35 @@ create table scheduledtask_execution(
 );
 ----
 
-`actuator-scheduledtask-spring-boot-starter` 中的jdbc存储主要是基于MySQL相关语法执行sql的，
-如果项目使用的是其他数据库不一定支持，此时可以参考 <<customize, 下一节>> 的自定义存储
+.Oracle
+[source,sql,subs="verbatim"]
+----
+CREATE TABLE scheduledtask_execution (
+     id NUMBER PRIMARY KEY,
+     method_name VARCHAR2(400),
+     start_time TIMESTAMP,
+     end_time TIMESTAMP,
+     state VARCHAR2(200),
+     log CLOB,
+     exception CLOB
+);
+----
+
+.PostgreSQL
+[source,sql,subs="verbatim"]
+----
+CREATE TABLE scheduledtask_execution (
+     id SERIAL PRIMARY KEY,
+     method_name VARCHAR(400),
+     start_time TIMESTAMP,
+     end_time TIMESTAMP,
+     state VARCHAR(200),
+     log TEXT,
+     exception TEXT
+);
+----
+
+不同数据类型的分页查询语法不同，目前 `actuator-scheduledtask-spring-boot-starter` 支持Oracle、MySQL、PostgreSQL这三种类型，会在项目启动时根据数据库驱动返回的元数据自动识别类型无需手动配置，如果项目使用的是其它类型的数据库则可以参考 <<customize, 下一节>> 的自定义存储
 
 NOTE: 由于数据库存储会把所有任务执行记录都保存下来，在存在一些执行频率很高的定时任务时有可能会导致单表数据量过大的问题，
 因此需要评估项目的调度任务情况再谨慎选择
@@ -244,6 +272,32 @@ public class MyScheduledTaskExecutionRepository implements ScheduledTaskExecutio
     public String log(Long id) {
         return null;
     }
+}
+----
+
+完全实现 `ScheduledTaskExecutionRepository` 接口的每个方法工作量较大，如果仍然使用的是数据库存储只是 `actuator-scheduledtask-spring-boot-starter` 不支持相应数据库类型的分页查询语法，那只需要创建 `PagingProcessor` 的实现类并复用 `JdbcScheduledTaskExecutionRepository` 即可
+
+[source,java,subs="verbatim"]
+----
+@Configuration
+public class MyConfig {
+
+            @Bean
+            public ScheduledTaskExecutionRepository jdbcScheduledTaskExecutionRepository(ScheduledProperties scheduledProperties, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+                PagingProcessor pagingProcessor = new PagingProcessor() {
+
+                    @Override
+                    public String getPagingSql(String originalSql) {
+                        return null;
+                    }
+
+                    @Override
+                    public void processParameters(int page, int size, List<Object> parameters) {
+
+                    }
+                };
+            return new JdbcScheduledTaskExecutionRepository(scheduledProperties, jdbcTemplate, transactionTemplate, pagingProcessor);
+        }
 }
 ----
 

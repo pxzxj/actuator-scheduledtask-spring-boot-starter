@@ -7,12 +7,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
 
 public class ScheduledTaskAutoConfigurationTest {
 
@@ -33,7 +34,12 @@ public class ScheduledTaskAutoConfigurationTest {
     @Test
     public void testRepositoryType() {
         contextRunner.withPropertyValues("management.scheduledtask.repository-type=jdbc")
-                .withBean(JdbcTemplate.class, () -> new JdbcTemplate(new SimpleDriverDataSource()))
+                .withBean(JdbcTemplate.class, () -> new JdbcTemplate(new EmbeddedDatabaseBuilder()
+                        .generateUniqueName(true)
+                        .setType(H2)
+                        .setScriptEncoding("UTF-8")
+                        .ignoreFailedDrops(true)
+                        .build()))
                 .withBean(TransactionTemplate.class, () -> new TransactionTemplate(new DataSourceTransactionManager()))
                 .run(context -> {
             assertThat(context).hasSingleBean(ScheduledTaskExecutionRepository.class);
