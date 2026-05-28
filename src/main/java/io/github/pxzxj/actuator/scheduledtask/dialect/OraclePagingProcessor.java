@@ -9,8 +9,8 @@ public class OraclePagingProcessor implements PagingProcessor {
         String sql = "SELECT * FROM ( " +
                 " SELECT TMP_PAGE.*, ROWNUM PAGEHELPER_ROW_ID FROM ( " +
                 originalSql +
-                " ) TMP_PAGE)" +
-                " WHERE PAGEHELPER_ROW_ID <= ? AND PAGEHELPER_ROW_ID > ?";
+                " ) TMP_PAGE WHERE ROWNUM <= ?)" +
+                " WHERE PAGEHELPER_ROW_ID > ?";
         return sql;
     }
 
